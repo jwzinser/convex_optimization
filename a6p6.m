@@ -1,0 +1,36 @@
+%A6.6 Monotonic increasing function, convolution
+clear all; close all;
+
+% create problem data  
+randn('state',0);
+N = 100; 
+% create an increasing input signal
+xtrue = zeros(N,1);
+xtrue(1:40) = 0.1;
+xtrue(50) = 2;
+xtrue(70:80) = 0.15;
+xtrue(80) = 1;
+xtrue = cumsum(xtrue);
+
+% pass the increasing input through a moving-average filter 
+% and add Gaussian noise
+h = [1 -0.85 0.7 -0.3]; k = length(h);
+yhat = conv(h,xtrue);
+y = yhat(1:end-3) + randn(N,1);
+%to create the A matrix
+hf=fliplr(h);
+A=zeros(N);
+A(1,1)=h(1);
+A(2,1:2)=hf(1:2);
+A(3,1:3)=hf(1:3);
+for i=4:N
+    A(i,i-3:i)=hf;
+end
+
+cvx_begin
+variable x(N)
+minimize sum_square(y-A*x)
+subject to
+x>=0
+x(1:N-1)<=x(2:N)
+cvx_end
